@@ -1,4 +1,4 @@
-# Students (ULB: Master un Cybersecurity)
+# Students (ULB: Master in Cybersecurity)
 
 DETRY Pierrick (000545842)
 
