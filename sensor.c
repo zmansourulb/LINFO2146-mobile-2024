@@ -195,22 +195,27 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
 
   else if (dmsg.msgcat == NULL_MSG);
 
+  // APPLICATION packet
   else if (dmsg.msgcat == APPLICATION) {
+    // Forward the light level packet to the parent
     if (dmsg.appcat == APP_LGT_LVL) {
       nullnet_buf = (uint8_t *)(&dmsg);
       nullnet_len = sizeof(m_packet_t);
       NETSTACK_NETWORK.output(&parent);
     } else if (dmsg.appcat == APP_LGT_ON) {
+      // Light up the lights if you're a light bulb
       if (sensor_cat == LGT_BLB) {
         leds_on(LEDS_GREEN);
         ctimer_set(&light_off_timer, dmsg.value * CLOCK_SECOND, set_light_off, NULL);
       }
+      // Forward the packet to the children
       for (int i = 0; i < nb_children; i++) {
         nullnet_buf = (uint8_t *)(&dmsg);
         nullnet_len = sizeof(m_packet_t);
         NETSTACK_NETWORK.output(&children[i]);
       }
     } else if (dmsg.appcat == APP_IRG_ON) {
+      // Start irrigation if you're the irrigation system
       if (sensor_cat == IRG_SYS) {
         leds_on(LEDS_GREEN);
         m_packet_t msg = encode_app_message(SENSOR, APP_IRG_ACK, 1);
@@ -220,18 +225,19 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
         NETSTACK_NETWORK.output(&parent);
         ctimer_set(&irrigation_off_timer, dmsg.value * CLOCK_SECOND, set_irrigation_off, NULL);
       }
+      // Forward the packet to the children
       for (int i = 0; i < nb_children; i++) {
         nullnet_buf = (uint8_t *)(&dmsg);
         nullnet_len = sizeof(m_packet_t);
         NETSTACK_NETWORK.output(&children[i]);
       }
+      // Irrigation acknowledgement
     } else if (dmsg.appcat == APP_IRG_ACK) {
       nullnet_buf = (uint8_t *)(&dmsg);
       nullnet_len = sizeof(m_packet_t);
       NETSTACK_NETWORK.output(&parent);
     } else if (dmsg.appcat == APP_MOB_LGT_SEN) {
       if (dmsg.value % 2 == 0) {
-        // mobile terminal -> subgateway (-> light sensor)
         nullnet_buf = (uint8_t *)(&dmsg);
         nullnet_len = sizeof(m_packet_t);
         NETSTACK_NETWORK.output(&parent);
@@ -244,7 +250,6 @@ void input_callback(const void *data, uint16_t len, const linkaddr_t *src, const
         } else if (dmsg.value == 3 && sensor_cat == MOB_TER) {
           LOG_INFO("Mobile terminal got a response from the light sensor...\n");
         } else {
-          // (mobile terminal ->) subgateway -> light sensor
           for (int i = 0; i < nb_children; i++) {
             nullnet_buf = (uint8_t *)(&dmsg);
             nullnet_len = sizeof(m_packet_t);
